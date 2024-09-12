@@ -47,6 +47,10 @@ if (ENABLE_CUSTOM_COMPILER_FLAGS)
             -Wused-but-marked-unused
             -Wswitch-enum
         )
+        if(QNX)
+            list(REMOVE_ITEM custom_compiler_flags -std=c89)
+        endif()
+
     elseif("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
         # Disable warning c4001 - nonstandard extension 'single line comment' was used
         # Define _CRT_SECURE_NO_WARNINGS to disable deprecation warnings for "insecure" C library functions
@@ -254,6 +258,10 @@ if(ENABLE_CJSON_TEST)
         else()
             target_compile_options(${TEST_CJSON} PRIVATE "-fno-sanitize=float-divide-by-zero")
         endif()
+    endif()
+
+    if(QNX)
+        install(TARGETS "${TEST_CJSON}" DESTINATION bin/cJSON_tests)
     endif()
 
     #"check" target that automatically builds everything and runs the tests
