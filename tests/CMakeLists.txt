@@ -95,7 +95,7 @@ if(ENABLE_CJSON_TEST)
             PATTERN "CMakeFiles" EXCLUDE
             PATTERN "*.cmake" EXCLUDE
             PATTERN "Makefile" EXCLUDE
-            PATTERN "libunity.a" EXCLUDE
+            PATTERN "*.a" EXCLUDE
         )
     endif() 
 
