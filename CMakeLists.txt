@@ -256,6 +256,10 @@ if(ENABLE_CJSON_TEST)
         endif()
     endif()
 
+    if(QNX)
+        install(TARGETS "${TEST_CJSON}" DESTINATION bin/cJSON_tests)
+    endif()
+
     #"check" target that automatically builds everything and runs the tests
     add_custom_target(check
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
