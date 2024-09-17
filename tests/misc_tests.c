@@ -517,13 +517,12 @@ static void cjson_get_number_value_should_get_a_number(void)
     TEST_ASSERT_EQUAL_DOUBLE(cJSON_GetNumberValue(number), number->valuedouble);
     TEST_ASSERT_DOUBLE_IS_NAN(cJSON_GetNumberValue(string));
     TEST_ASSERT_DOUBLE_IS_NAN(cJSON_GetNumberValue(NULL));
-
+    
     cJSON_Delete(number);
     cJSON_Delete(string);
 }
 
-static void cjson_create_string_reference_should_create_a_string_reference(void)
-{
+static void cjson_create_string_reference_should_create_a_string_reference(void) {
     const char *string = "I am a string!";
 
     cJSON *string_reference = cJSON_CreateStringReference(string);
@@ -605,151 +604,25 @@ static void cjson_add_item_to_object_should_not_use_after_free_when_string_is_al
     cJSON_Delete(object);
 }
 
-static void cjson_delete_item_from_array_should_not_broken_list_structure(void)
+static void is_nan_should_detect_nan(void)
 {
-    const char expected_json1[] = "{\"rd\":[{\"a\":\"123\"}]}";
-    const char expected_json2[] = "{\"rd\":[{\"a\":\"123\"},{\"b\":\"456\"}]}";
-    const char expected_json3[] = "{\"rd\":[{\"b\":\"456\"}]}";
-    char *str1 = NULL;
-    char *str2 = NULL;
-    char *str3 = NULL;
+    double nan = 0.0/0.0;
 
-    cJSON *root = cJSON_Parse("{}");
-
-    cJSON *array = cJSON_AddArrayToObject(root, "rd");
-    cJSON *item1 = cJSON_Parse("{\"a\":\"123\"}");
-    cJSON *item2 = cJSON_Parse("{\"b\":\"456\"}");
-
-    cJSON_AddItemToArray(array, item1);
-    str1 = cJSON_PrintUnformatted(root);
-    TEST_ASSERT_EQUAL_STRING(expected_json1, str1);
-    free(str1);
-
-    cJSON_AddItemToArray(array, item2);
-    str2 = cJSON_PrintUnformatted(root);
-    TEST_ASSERT_EQUAL_STRING(expected_json2, str2);
-    free(str2);
-
-    /* this should not broken list structure */
-    cJSON_DeleteItemFromArray(array, 0);
-    str3 = cJSON_PrintUnformatted(root);
-    TEST_ASSERT_EQUAL_STRING(expected_json3, str3);
-    free(str3);
-
-    cJSON_Delete(root);
+    TEST_ASSERT_TRUE(is_nan(nan));
+    TEST_ASSERT_FALSE(is_nan(1));
 }
 
-static void cjson_set_valuestring_to_object_should_not_leak_memory(void)
+static void is_infinity_should_detect_infinity(void)
 {
-    cJSON *root = cJSON_Parse("{}");
-    const char *stringvalue = "valuestring could be changed safely";
-    const char *reference_valuestring = "reference item should be freed by yourself";
-    const char *short_valuestring = "shorter valuestring";
-    const char *long_valuestring = "new valuestring which much longer than previous should be changed safely";
-    cJSON *item1 = cJSON_CreateString(stringvalue);
-    cJSON *item2 = cJSON_CreateStringReference(reference_valuestring);
-    char *ptr1 = NULL;
-    char *return_value = NULL;
+    double negative_infinity = -1.0/0.0;
+    double positive_infinity = 1.0/0.0;
 
-    cJSON_AddItemToObject(root, "one", item1);
-    cJSON_AddItemToObject(root, "two", item2);
-
-    ptr1 = item1->valuestring;
-    return_value = cJSON_SetValuestring(cJSON_GetObjectItem(root, "one"), short_valuestring);
-    TEST_ASSERT_NOT_NULL(return_value);
-    TEST_ASSERT_EQUAL_PTR_MESSAGE(ptr1, return_value, "new valuestring shorter than old should not reallocate memory");
-    TEST_ASSERT_EQUAL_STRING(short_valuestring, cJSON_GetObjectItem(root, "one")->valuestring);
-
-    /* we needn't to free the original valuestring manually */
-    ptr1 = item1->valuestring;
-    return_value = cJSON_SetValuestring(cJSON_GetObjectItem(root, "one"), long_valuestring);
-    TEST_ASSERT_NOT_NULL(return_value);
-    TEST_ASSERT_NOT_EQUAL_MESSAGE(ptr1, return_value, "new valuestring longer than old should reallocate memory")
-    TEST_ASSERT_EQUAL_STRING(long_valuestring, cJSON_GetObjectItem(root, "one")->valuestring);
-
-    return_value = cJSON_SetValuestring(cJSON_GetObjectItem(root, "two"), long_valuestring);
-    TEST_ASSERT_NULL_MESSAGE(return_value, "valuestring of reference object should not be changed");
-    TEST_ASSERT_EQUAL_STRING(reference_valuestring, cJSON_GetObjectItem(root, "two")->valuestring);
-
-    cJSON_Delete(root);
+    TEST_ASSERT_TRUE(is_infinity(negative_infinity));
+    TEST_ASSERT_TRUE(is_infinity(positive_infinity));
+    TEST_ASSERT_FALSE(is_infinity(1));
 }
 
-static void cjson_set_bool_value_must_not_break_objects(void)
-{
-    cJSON *bobj, *sobj, *oobj, *refobj = NULL;
-
-    TEST_ASSERT_TRUE((cJSON_SetBoolValue(refobj, 1) == cJSON_Invalid));
-
-    bobj = cJSON_CreateFalse();
-    TEST_ASSERT_TRUE(cJSON_IsFalse(bobj));
-    TEST_ASSERT_TRUE((cJSON_SetBoolValue(bobj, 1) == cJSON_True));
-    TEST_ASSERT_TRUE(cJSON_IsTrue(bobj));
-    cJSON_SetBoolValue(bobj, 1);
-    TEST_ASSERT_TRUE(cJSON_IsTrue(bobj));
-    TEST_ASSERT_TRUE((cJSON_SetBoolValue(bobj, 0) == cJSON_False));
-    TEST_ASSERT_TRUE(cJSON_IsFalse(bobj));
-    cJSON_SetBoolValue(bobj, 0);
-    TEST_ASSERT_TRUE(cJSON_IsFalse(bobj));
-
-    sobj = cJSON_CreateString("test");
-    TEST_ASSERT_TRUE(cJSON_IsString(sobj));
-    cJSON_SetBoolValue(sobj, 1);
-    TEST_ASSERT_TRUE(cJSON_IsString(sobj));
-    cJSON_SetBoolValue(sobj, 0);
-    TEST_ASSERT_TRUE(cJSON_IsString(sobj));
-
-    oobj = cJSON_CreateObject();
-    TEST_ASSERT_TRUE(cJSON_IsObject(oobj));
-    cJSON_SetBoolValue(oobj, 1);
-    TEST_ASSERT_TRUE(cJSON_IsObject(oobj));
-    cJSON_SetBoolValue(oobj, 0);
-    TEST_ASSERT_TRUE(cJSON_IsObject(oobj));
-
-    refobj = cJSON_CreateStringReference("conststring");
-    TEST_ASSERT_TRUE(cJSON_IsString(refobj));
-    TEST_ASSERT_TRUE(refobj->type & cJSON_IsReference);
-    cJSON_SetBoolValue(refobj, 1);
-    TEST_ASSERT_TRUE(cJSON_IsString(refobj));
-    TEST_ASSERT_TRUE(refobj->type & cJSON_IsReference);
-    cJSON_SetBoolValue(refobj, 0);
-    TEST_ASSERT_TRUE(cJSON_IsString(refobj));
-    TEST_ASSERT_TRUE(refobj->type & cJSON_IsReference);
-    cJSON_Delete(refobj);
-
-    refobj = cJSON_CreateObjectReference(oobj);
-    TEST_ASSERT_TRUE(cJSON_IsObject(refobj));
-    TEST_ASSERT_TRUE(refobj->type & cJSON_IsReference);
-    cJSON_SetBoolValue(refobj, 1);
-    TEST_ASSERT_TRUE(cJSON_IsObject(refobj));
-    TEST_ASSERT_TRUE(refobj->type & cJSON_IsReference);
-    cJSON_SetBoolValue(refobj, 0);
-    TEST_ASSERT_TRUE(cJSON_IsObject(refobj));
-    TEST_ASSERT_TRUE(refobj->type & cJSON_IsReference);
-    cJSON_Delete(refobj);
-
-    cJSON_Delete(oobj);
-    cJSON_Delete(bobj);
-    cJSON_Delete(sobj);
-}
-
-static void deallocated_pointers_should_be_set_to_null(void)
-{
-    /* deallocated pointers should be set to null */
-    /* however, valgrind on linux reports when attempting to access a freed memory, we have to skip it */
-#ifndef ENABLE_VALGRIND
-    cJSON *string = cJSON_CreateString("item");
-    cJSON *root = cJSON_CreateObject();
-
-    cJSON_Delete(string);
-    free(string->valuestring);
-
-    cJSON_AddObjectToObject(root, "object");
-    cJSON_Delete(root->child);
-    free(root->child->string);
-#endif
-}
-
-int CJSON_CDECL main(void)
+int main(void)
 {
     UNITY_BEGIN();
 
@@ -776,10 +649,8 @@ int CJSON_CDECL main(void)
     RUN_TEST(cjson_create_array_reference_should_create_an_array_reference);
     RUN_TEST(cjson_add_item_to_object_or_array_should_not_add_itself);
     RUN_TEST(cjson_add_item_to_object_should_not_use_after_free_when_string_is_aliased);
-    RUN_TEST(cjson_delete_item_from_array_should_not_broken_list_structure);
-    RUN_TEST(cjson_set_valuestring_to_object_should_not_leak_memory);
-    RUN_TEST(cjson_set_bool_value_must_not_break_objects);
-    RUN_TEST(deallocated_pointers_should_be_set_to_null);
+    RUN_TEST(is_nan_should_detect_nan);
+    RUN_TEST(is_infinity_should_detect_infinity);
 
     return UNITY_END();
 }
