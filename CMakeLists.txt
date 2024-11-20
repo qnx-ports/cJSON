@@ -48,6 +48,10 @@ if (ENABLE_CUSTOM_COMPILER_FLAGS)
             -Wused-but-marked-unused
             -Wswitch-enum
         )
+        if(QNX)
+            list(REMOVE_ITEM custom_compiler_flags -std=c89)
+        endif()
+
     elseif("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
         list(APPEND custom_compiler_flags
             /GS

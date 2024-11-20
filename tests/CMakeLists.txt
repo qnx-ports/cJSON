@@ -91,6 +91,10 @@ if(ENABLE_CJSON_TEST)
             PATTERN "*.cmake" EXCLUDE
             PATTERN "Makefile" EXCLUDE
             PATTERN "*.a" EXCLUDE
+            PATTERN "*.so" EXCLUDE
+        )
+        install(FILES ${PROJECT_BINARY_DIR}/tests/libunity.so
+            DESTINATION lib
         )
     endif()
 
